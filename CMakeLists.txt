@@ -31,11 +31,13 @@ juce_add_plugin(Nineight
     VST3_CATEGORIES Instrument Synth)
 
 juce_add_binary_data(NineightAssets SOURCES
-    assets/ym2608_rhythm_rom.bin)
+    assets/ym2608_rhythm_rom.bin
+    ui/webui.zip)
 
 target_sources(Nineight PRIVATE
     src/PluginProcessor.cpp
-    src/PluginEditor.cpp)
+    src/PluginEditor.cpp
+    src/bridge/WebViewBridge.cpp)
 
 target_include_directories(Nineight PRIVATE src)
 

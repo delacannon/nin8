@@ -71,10 +71,12 @@ void NineightAudioProcessor::syncPatchFromParams()
 
 void NineightAudioProcessor::prepareToPlay (double sampleRate, int)
 {
+    lastSampleRate = sampleRate;
     syncPatchFromParams();
     synth.prepare (sampleRate,
                    reinterpret_cast<const uint8_t*> (BinaryData::ym2608_rhythm_rom_bin),
                    (size_t) BinaryData::ym2608_rhythm_rom_binSize);
+    nativeRate = synth.nativeSampleRate();
     patchDirty.store (false, std::memory_order_release);
 }
 
@@ -130,13 +132,21 @@ void NineightAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         pos = eventPos;
 
         if (msg.isNoteOn())
+        {
             synth.noteOn (msg.getNoteNumber());
+            noteOutbox.push ({ EngineCommand::noteOn, msg.getNoteNumber(), 0, 0 });
+        }
         else if (msg.isNoteOff())
+        {
             synth.noteOff (msg.getNoteNumber());
+            noteOutbox.push ({ EngineCommand::noteOff, msg.getNoteNumber(), 0, 0 });
+        }
         else if (msg.isAllNotesOff() || msg.isAllSoundOff())
             synth.allNotesOff();
     }
     renderSegment (buffer, pos, buffer.getNumSamples() - pos);
+
+    waveformTap.push (buffer.getReadPointer (0), buffer.getReadPointer (1), buffer.getNumSamples());
 }
 
 juce::AudioProcessorEditor* NineightAudioProcessor::createEditor()

@@ -38,6 +38,8 @@ public:
         initRhythm();
     }
 
+    double nativeSampleRate() { return (double) chip.sampleRate(); }
+
     void noteOn (int midiNote)
     {
         if (! polyphony && lastNote >= 0)

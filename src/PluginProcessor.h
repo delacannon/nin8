@@ -3,6 +3,7 @@
 #include <juce_audio_utils/juce_audio_utils.h>
 #include "engine/Synth.h"
 #include "engine/RegisterWriteQueue.h"
+#include "engine/WaveformTap.h"
 
 class NineightAudioProcessor : public juce::AudioProcessor,
                                private juce::AudioProcessorValueTreeState::Listener
@@ -37,6 +38,10 @@ public:
     // Message-thread producers (UI bridge / params)
     CommandQueue& commands() { return commandQueue; }
     juce::AudioProcessorValueTreeState& parameters() { return apvts; }
+    CommandQueue& noteEventsForUi() { return noteOutbox; } // audio → GUI
+    const WaveformTap& waveform() const { return waveformTap; }
+    double currentSampleRate() const { return lastSampleRate; }
+    double chipNativeRate() const { return nativeRate; }
 
 private:
     void parameterChanged (const juce::String& parameterID, float newValue) override;
@@ -48,7 +53,11 @@ private:
 
     Synth synth;
     CommandQueue commandQueue;
+    CommandQueue noteOutbox;
+    WaveformTap waveformTap;
     std::atomic<bool> patchDirty { false };
+    double lastSampleRate = 44100.0;
+    double nativeRate = 55466.0;
 
     // Raw APVTS atomics, RT-safe to read in processBlock
     std::atomic<float>* pAlg = nullptr;

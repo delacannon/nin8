@@ -1,15 +1,47 @@
 #include "PluginEditor.h"
 
+#if ! NINEIGHT_NO_WEBVIEW
+
 NineightAudioProcessorEditor::NineightAudioProcessorEditor (NineightAudioProcessor& p)
-    : AudioProcessorEditor (&p), processorRef (p)
+    : AudioProcessorEditor (&p),
+      processorRef (p),
+      bridge (p),
+      webView (bridge.makeOptions())
 {
+    addAndMakeVisible (webView);
+    webView.goToURL (juce::WebBrowserComponent::getResourceProviderRoot());
+
+    for (auto* param : processorRef.getParameters())
+        if (auto* withID = dynamic_cast<juce::AudioProcessorParameterWithID*> (param))
+            processorRef.parameters().addParameterListener (withID->paramID, this);
+
     setSize (1280, 800);
+    startTimerHz (30);
 }
 
-void NineightAudioProcessorEditor::paint (juce::Graphics& g)
+NineightAudioProcessorEditor::~NineightAudioProcessorEditor()
 {
-    g.fillAll (juce::Colour (0xff260e04));
-    g.setColour (juce::Colour (0xff7b5e57));
-    g.setFont (24.0f);
-    g.drawText ("NINEIGHT — UI pending (Phase 3)", getLocalBounds(), juce::Justification::centred);
+    for (auto* param : processorRef.getParameters())
+        if (auto* withID = dynamic_cast<juce::AudioProcessorParameterWithID*> (param))
+            processorRef.parameters().removeParameterListener (withID->paramID, this);
 }
+
+void NineightAudioProcessorEditor::resized()
+{
+    webView.setBounds (getLocalBounds());
+}
+
+void NineightAudioProcessorEditor::timerCallback()
+{
+    bridge.emitTimerEvents (webView);
+}
+
+void NineightAudioProcessorEditor::parameterChanged (const juce::String& parameterID, float newValue)
+{
+    juce::MessageManager::callAsync ([this, parameterID, newValue]
+    {
+        bridge.emitParamChanged (webView, parameterID, newValue);
+    });
+}
+
+#endif
