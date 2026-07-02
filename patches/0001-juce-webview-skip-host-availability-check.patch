@@ -1,0 +1,19 @@
+diff --git a/modules/juce_gui_extra/native/juce_WebBrowserComponent_linux.cpp b/modules/juce_gui_extra/native/juce_WebBrowserComponent_linux.cpp
+index 46d5d82..921d401 100644
+--- a/modules/juce_gui_extra/native/juce_WebBrowserComponent_linux.cpp
++++ b/modules/juce_gui_extra/native/juce_WebBrowserComponent_linux.cpp
+@@ -1371,7 +1371,13 @@ public:
+               const StringArray& userStrings)
+         : Thread (SystemStats::getJUCEVersion() + ": Webview"), browser (browserIn), userAgent (optionsIn.getUserAgent())
+     {
+-        webKitIsAvailable = WebKitSymbols::getInstance()->isWebKitAvailable();
++        // NINEIGHT patch: don't dlopen webkit into the host process just to
++        // probe availability — hosts that bundle glib/gtk (Ardour) make the
++        // in-process dlopen fail with undefined symbols even though the
++        // out-of-process child (fresh exec, clean env) loads webkit fine.
++        // If webkit is genuinely missing the child exits and init() bails on
++        // the windowHandle read.
++        webKitIsAvailable = true;
+         init (InitialisationData { optionsIn.getNativeIntegrationsEnabled(),
+                                    userAgent,
+                                    userStrings.joinIntoString ("\n"),

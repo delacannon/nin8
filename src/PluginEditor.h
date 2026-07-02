@@ -21,7 +21,7 @@ private:
 
     NineightAudioProcessor& processorRef;
     WebViewBridge bridge;
-    juce::WebBrowserComponent webView;
+    std::unique_ptr<juce::WebBrowserComponent> webView;
 
     // Coalesce param echoes: flushed at timer rate instead of one IPC event per
     // change (a knob drag fires hundreds/sec and starves the message thread)

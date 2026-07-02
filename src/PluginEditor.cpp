@@ -1,15 +1,22 @@
 #include "PluginEditor.h"
 
 #if ! NINEIGHT_NO_WEBVIEW
+#include "bridge/HostEnvSanitizer.h"
 
 NineightAudioProcessorEditor::NineightAudioProcessorEditor (NineightAudioProcessor& p)
     : AudioProcessorEditor (&p),
       processorRef (p),
-      bridge (p),
-      webView (bridge.makeOptions())
+      bridge (p)
 {
-    addAndMakeVisible (webView);
-    webView.goToURL (juce::WebBrowserComponent::getResourceProviderRoot());
+    {
+        // The webview helper is forked in this constructor — keep host bundle
+        // env vars (Ardour et al.) away from it or webkit fails white
+        ScopedHostEnvSanitizer envGuard;
+        webView = std::make_unique<juce::WebBrowserComponent> (bridge.makeOptions());
+    }
+
+    addAndMakeVisible (*webView);
+    webView->goToURL (juce::WebBrowserComponent::getResourceProviderRoot());
 
     for (auto* param : processorRef.getParameters())
         if (auto* withID = dynamic_cast<juce::AudioProcessorParameterWithID*> (param))
@@ -28,12 +35,12 @@ NineightAudioProcessorEditor::~NineightAudioProcessorEditor()
 
 void NineightAudioProcessorEditor::resized()
 {
-    webView.setBounds (getLocalBounds());
+    webView->setBounds (getLocalBounds());
 }
 
 void NineightAudioProcessorEditor::timerCallback()
 {
-    bridge.emitTimerEvents (webView);
+    bridge.emitTimerEvents (*webView);
 
     std::map<juce::String, float> toSend;
     {
@@ -41,7 +48,7 @@ void NineightAudioProcessorEditor::timerCallback()
         toSend.swap (pendingParams);
     }
     for (const auto& [id, value] : toSend)
-        bridge.emitParamChanged (webView, id, value);
+        bridge.emitParamChanged (*webView, id, value);
 }
 
 void NineightAudioProcessorEditor::parameterChanged (const juce::String& parameterID, float newValue)

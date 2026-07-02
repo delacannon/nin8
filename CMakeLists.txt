@@ -7,6 +7,26 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 option(NINEIGHT_NO_WEBVIEW "Build with a generic fallback editor instead of the WebView UI" OFF)
 
+# JUCE needs a patch for hosts that bundle their own glib/gtk (Ardour):
+# the stock parent-process webkit availability probe dlopens against the
+# host's libs and fails. Apply once; no-op when already applied.
+set(JUCE_WEBVIEW_PATCH ${CMAKE_CURRENT_SOURCE_DIR}/patches/0001-juce-webview-skip-host-availability-check.patch)
+execute_process(
+    COMMAND git apply --reverse --check ${JUCE_WEBVIEW_PATCH}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/third_party/JUCE
+    RESULT_VARIABLE JUCE_PATCH_ALREADY_APPLIED
+    ERROR_QUIET OUTPUT_QUIET)
+if(NOT JUCE_PATCH_ALREADY_APPLIED EQUAL 0)
+    execute_process(
+        COMMAND git apply ${JUCE_WEBVIEW_PATCH}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/third_party/JUCE
+        RESULT_VARIABLE JUCE_PATCH_RESULT)
+    if(NOT JUCE_PATCH_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to apply JUCE webview patch (${JUCE_WEBVIEW_PATCH})")
+    endif()
+    message(STATUS "Applied JUCE webview host-check patch")
+endif()
+
 add_subdirectory(third_party/JUCE)
 
 # ymfm (BSD-3, Aaron Giles) — same sources the web app compiles to WASM
