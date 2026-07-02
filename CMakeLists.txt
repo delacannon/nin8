@@ -1,0 +1,54 @@
+cmake_minimum_required(VERSION 3.22)
+project(Nineight VERSION 0.1.0)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+option(NINEIGHT_NO_WEBVIEW "Build with a generic fallback editor instead of the WebView UI" OFF)
+
+add_subdirectory(third_party/JUCE)
+
+# ymfm (BSD-3, Aaron Giles) — same sources the web app compiles to WASM
+add_library(ymfm STATIC
+    third_party/ymfm/src/ymfm_opn.cpp
+    third_party/ymfm/src/ymfm_adpcm.cpp
+    third_party/ymfm/src/ymfm_ssg.cpp)
+target_include_directories(ymfm PUBLIC third_party/ymfm/src)
+
+juce_add_plugin(Nineight
+    COMPANY_NAME "NINEIGHT"
+    PLUGIN_MANUFACTURER_CODE Nin8
+    PLUGIN_CODE Opna
+    FORMATS VST3 Standalone $<$<PLATFORM_ID:Darwin>:AU>
+    PRODUCT_NAME "NINEIGHT"
+    IS_SYNTH TRUE
+    NEEDS_MIDI_INPUT TRUE
+    NEEDS_MIDI_OUTPUT FALSE
+    IS_MIDI_EFFECT FALSE
+    NEEDS_WEB_BROWSER TRUE
+    COPY_PLUGIN_AFTER_BUILD TRUE
+    VST3_CATEGORIES Instrument Synth)
+
+target_sources(Nineight PRIVATE
+    src/PluginProcessor.cpp
+    src/PluginEditor.cpp)
+
+target_include_directories(Nineight PRIVATE src)
+
+target_compile_definitions(Nineight PUBLIC
+    JUCE_WEB_BROWSER=1
+    JUCE_USE_CURL=0
+    JUCE_VST3_CAN_REPLACE_VST2=0
+    JUCE_DISPLAY_SPLASH_SCREEN=0
+    $<$<BOOL:${NINEIGHT_NO_WEBVIEW}>:NINEIGHT_NO_WEBVIEW=1>)
+
+target_link_libraries(Nineight
+    PRIVATE
+        ymfm
+        juce::juce_audio_utils
+        juce::juce_gui_extra
+    PUBLIC
+        juce::juce_recommended_config_flags
+        juce::juce_recommended_lto_flags
+        juce::juce_recommended_warning_flags)
