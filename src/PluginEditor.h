@@ -23,6 +23,11 @@ private:
     WebViewBridge bridge;
     juce::WebBrowserComponent webView;
 
+    // Coalesce param echoes: flushed at timer rate instead of one IPC event per
+    // change (a knob drag fires hundreds/sec and starves the message thread)
+    juce::CriticalSection pendingLock;
+    std::map<juce::String, float> pendingParams;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NineightAudioProcessorEditor)
 };
 

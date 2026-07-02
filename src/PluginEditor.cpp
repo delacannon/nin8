@@ -34,14 +34,20 @@ void NineightAudioProcessorEditor::resized()
 void NineightAudioProcessorEditor::timerCallback()
 {
     bridge.emitTimerEvents (webView);
+
+    std::map<juce::String, float> toSend;
+    {
+        const juce::ScopedLock sl (pendingLock);
+        toSend.swap (pendingParams);
+    }
+    for (const auto& [id, value] : toSend)
+        bridge.emitParamChanged (webView, id, value);
 }
 
 void NineightAudioProcessorEditor::parameterChanged (const juce::String& parameterID, float newValue)
 {
-    juce::MessageManager::callAsync ([this, parameterID, newValue]
-    {
-        bridge.emitParamChanged (webView, parameterID, newValue);
-    });
+    const juce::ScopedLock sl (pendingLock);
+    pendingParams[parameterID] = newValue;
 }
 
 #endif

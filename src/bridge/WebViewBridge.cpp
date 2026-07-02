@@ -155,6 +155,27 @@ juce::WebBrowserComponent::Options WebViewBridge::makeOptions()
                 setParamFromUi (args[0].toString(), (float) (double) args[1]);
             complete ({});
         })
+        .withNativeFunction ("synthSetOpEnvelope", [this] (const juce::Array<juce::var>& args, WBC::NativeFunctionCompletion complete)
+        {
+            // One IPC call per knob-drag event instead of 11 synthSetParam calls
+            if (args.size() >= 2)
+            {
+                const int op = juce::jlimit (0, 3, (int) args[0]);
+                const auto& env = args[1];
+                static const std::pair<const char*, const char*> fields[] = {
+                    { "ar", "ar" }, { "dr", "dr" }, { "sr", "sr" }, { "rr", "rr" },
+                    { "sl", "sl" }, { "tl", "tl" }, { "ks", "ks" }, { "mul", "mul" },
+                    { "dt", "dt" }, { "am", "am" }, { "ssgEg", "ssgeg" },
+                };
+                for (const auto& [jsName, paramName] : fields)
+                {
+                    const auto v = env.getProperty (jsName, juce::var());
+                    if (! v.isVoid())
+                        setParamFromUi (params::opId (op, paramName), (float) (double) v);
+                }
+            }
+            complete ({});
+        })
         .withNativeFunction ("synthPost", [this] (const juce::Array<juce::var>& args, WBC::NativeFunctionCompletion complete)
         {
             if (args.size() > 0)
