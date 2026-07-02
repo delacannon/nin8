@@ -38,12 +38,10 @@ build/render_test assets/ym2608_rhythm_rom.bin /tmp/c4.wav   # renders piano C4,
 
 ## Bridge protocol
 
-| Native fn (JS → C++) | Purpose |
+| JS → C++ | Purpose |
 |---|---|
-| `synthReady()` | returns `{sampleRate, nativeRate, patch}` on UI boot |
-| `synthNoteOn/Off(note)` | `"C4"` → native voice allocator |
-| `synthSetParam(id, value)` | APVTS `setValueNotifyingHost` (DAW automation records) |
-| `synthPost(msg)` | unchanged AudioWorklet message shapes (`write`, `reset`, …) |
+| `synthReady()` (native fn, round-trip) | returns `{sampleRate, nativeRate, patch}` on UI boot |
+| `uiEvent` (one-way `emitEvent`) | all hot-path traffic: `{cmd: noteOn/noteOff/allNotesOff/setParam/setOpEnvelope/post, …}` — no response roundtrip, so knob drags can't flood the message loop |
 
 Events (C++ → JS, 30 Hz while editor visible): `paramChanged`, `noteOn`/`noteOff`
 (host MIDI → key highlight), `waveform` (2048-byte AnalyserNode-format scope data).
