@@ -81,6 +81,43 @@ void WebViewBridge::setParamFromUi (const juce::String& id, float value)
     }
 }
 
+void WebViewBridge::setOpEnvelopeFromUi (int op, const juce::var& env)
+{
+    op = juce::jlimit (0, 3, op);
+    static const std::pair<const char*, const char*> fields[] = {
+        { "ar", "ar" }, { "dr", "dr" }, { "sr", "sr" }, { "rr", "rr" },
+        { "sl", "sl" }, { "tl", "tl" }, { "ks", "ks" }, { "mul", "mul" },
+        { "dt", "dt" }, { "am", "am" }, { "ssgEg", "ssgeg" },
+    };
+    for (const auto& [jsName, paramName] : fields)
+    {
+        const auto v = env.getProperty (jsName, juce::var());
+        if (! v.isVoid())
+            setParamFromUi (params::opId (op, paramName), (float) (double) v);
+    }
+}
+
+void WebViewBridge::handleUiEvent (const juce::var& payload)
+{
+    const auto cmd = payload.getProperty ("cmd", {}).toString();
+
+    if (cmd == "setOpEnvelope")
+        setOpEnvelopeFromUi ((int) payload.getProperty ("op", 0), payload.getProperty ("env", {}));
+    else if (cmd == "setParam")
+        setParamFromUi (payload.getProperty ("id", {}).toString(),
+                        (float) (double) payload.getProperty ("value", 0.0));
+    else if (cmd == "noteOn")
+        processor.commands().push ({ EngineCommand::noteOn,
+                                     noteStringToMidi (payload.getProperty ("note", {}).toString()), 0, 0 });
+    else if (cmd == "noteOff")
+        processor.commands().push ({ EngineCommand::noteOff,
+                                     noteStringToMidi (payload.getProperty ("note", {}).toString()), 0, 0 });
+    else if (cmd == "allNotesOff")
+        processor.commands().push ({ EngineCommand::allNotesOff, 0, 0, 0 });
+    else if (cmd == "post")
+        handlePost (payload.getProperty ("msg", {}));
+}
+
 void WebViewBridge::handlePost (const juce::var& msg)
 {
     const auto type = msg.getProperty ("type", {}).toString();
@@ -157,24 +194,15 @@ juce::WebBrowserComponent::Options WebViewBridge::makeOptions()
         })
         .withNativeFunction ("synthSetOpEnvelope", [this] (const juce::Array<juce::var>& args, WBC::NativeFunctionCompletion complete)
         {
-            // One IPC call per knob-drag event instead of 11 synthSetParam calls
             if (args.size() >= 2)
-            {
-                const int op = juce::jlimit (0, 3, (int) args[0]);
-                const auto& env = args[1];
-                static const std::pair<const char*, const char*> fields[] = {
-                    { "ar", "ar" }, { "dr", "dr" }, { "sr", "sr" }, { "rr", "rr" },
-                    { "sl", "sl" }, { "tl", "tl" }, { "ks", "ks" }, { "mul", "mul" },
-                    { "dt", "dt" }, { "am", "am" }, { "ssgEg", "ssgeg" },
-                };
-                for (const auto& [jsName, paramName] : fields)
-                {
-                    const auto v = env.getProperty (jsName, juce::var());
-                    if (! v.isVoid())
-                        setParamFromUi (params::opId (op, paramName), (float) (double) v);
-                }
-            }
+                setOpEnvelopeFromUi ((int) args[0], args[1]);
             complete ({});
+        })
+        // One-way channel for all high-rate UI traffic (knob drags, notes,
+        // register writes): no promise/complete roundtrip per call
+        .withEventListener ("uiEvent", [this] (const juce::var& payload)
+        {
+            handleUiEvent (payload);
         })
         .withNativeFunction ("synthPost", [this] (const juce::Array<juce::var>& args, WBC::NativeFunctionCompletion complete)
         {

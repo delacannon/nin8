@@ -21,8 +21,10 @@ public:
 
 private:
     juce::var buildReadyInfo();
+    void handleUiEvent (const juce::var& payload);
     void handlePost (const juce::var& msg);
     void setParamFromUi (const juce::String& id, float value);
+    void setOpEnvelopeFromUi (int op, const juce::var& env);
 
     NineightAudioProcessor& processor;
     std::unique_ptr<juce::ZipFile> uiZip;
