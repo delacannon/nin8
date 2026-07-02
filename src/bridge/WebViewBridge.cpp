@@ -23,9 +23,9 @@ static int noteStringToMidi (const juce::String& note)
 static juce::String mimeForPath (const juce::String& path)
 {
     const auto ext = path.fromLastOccurrenceOf (".", false, false).toLowerCase();
-    if (ext == "html") return "text/html";
-    if (ext == "js" || ext == "mjs") return "text/javascript";
-    if (ext == "css") return "text/css";
+    if (ext == "html") return "text/html; charset=utf-8";
+    if (ext == "js" || ext == "mjs") return "text/javascript; charset=utf-8";
+    if (ext == "css") return "text/css; charset=utf-8";
     if (ext == "png") return "image/png";
     if (ext == "json" || ext == "fnt") return "application/json";
     if (ext == "wasm") return "application/wasm";
