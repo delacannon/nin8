@@ -1,17 +1,81 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "BinaryData.h"
+#include "engine/Params.h"
+
+static const char* kOpFields[11] = { "ar", "dr", "sr", "rr", "sl", "tl", "ks", "mul", "dt", "am", "ssgeg" };
 
 NineightAudioProcessor::NineightAudioProcessor()
-    : AudioProcessor (BusesProperties().withOutput ("Output", juce::AudioChannelSet::stereo(), true))
+    : AudioProcessor (BusesProperties().withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+      apvts (*this, nullptr, "PARAMS", params::createLayout())
 {
+    cacheParameterPointers();
+    for (auto* p : getParameters())
+        if (auto* withID = dynamic_cast<juce::AudioProcessorParameterWithID*> (p))
+            apvts.addParameterListener (withID->paramID, this);
+}
+
+NineightAudioProcessor::~NineightAudioProcessor()
+{
+    for (auto* p : getParameters())
+        if (auto* withID = dynamic_cast<juce::AudioProcessorParameterWithID*> (p))
+            apvts.removeParameterListener (withID->paramID, this);
+}
+
+void NineightAudioProcessor::cacheParameterPointers()
+{
+    pAlg = apvts.getRawParameterValue ("alg");
+    pFb = apvts.getRawParameterValue ("fb");
+    pLfoFreq = apvts.getRawParameterValue ("lfo_freq");
+    pLfoAms = apvts.getRawParameterValue ("lfo_ams");
+    pLfoPms = apvts.getRawParameterValue ("lfo_pms");
+    pGain = apvts.getRawParameterValue ("master_gain");
+    pPan = apvts.getRawParameterValue ("pan");
+    pPoly = apvts.getRawParameterValue ("poly");
+    for (int op = 0; op < 4; ++op)
+        for (int f = 0; f < 11; ++f)
+            pOp[op][f] = apvts.getRawParameterValue (params::opId (op, kOpFields[f]));
+}
+
+void NineightAudioProcessor::parameterChanged (const juce::String&, float)
+{
+    patchDirty.store (true, std::memory_order_release);
+}
+
+// Audio thread: copy param atomics → synth patch, re-write registers
+void NineightAudioProcessor::syncPatchFromParams()
+{
+    auto& patch = synth.patch;
+    patch.algorithm = (int) pAlg->load();
+    patch.feedback = (int) pFb->load();
+    patch.lfo.freq = (int) pLfoFreq->load();
+    patch.lfo.ams = (int) pLfoAms->load();
+    patch.lfo.pms = (int) pLfoPms->load();
+    for (int op = 0; op < 4; ++op)
+    {
+        auto& e = patch.ops[op];
+        e.ar = (int) pOp[op][0]->load();
+        e.dr = (int) pOp[op][1]->load();
+        e.sr = (int) pOp[op][2]->load();
+        e.rr = (int) pOp[op][3]->load();
+        e.sl = (int) pOp[op][4]->load();
+        e.tl = (int) pOp[op][5]->load();
+        e.ks = (int) pOp[op][6]->load();
+        e.mul = (int) pOp[op][7]->load();
+        e.dt = (int) pOp[op][8]->load();
+        e.am = pOp[op][9]->load() > 0.5f ? 1 : 0;
+        e.ssgEg = (int) pOp[op][10]->load();
+    }
+    synth.applyPatch();
 }
 
 void NineightAudioProcessor::prepareToPlay (double sampleRate, int)
 {
+    syncPatchFromParams();
     synth.prepare (sampleRate,
                    reinterpret_cast<const uint8_t*> (BinaryData::ym2608_rhythm_rom_bin),
                    (size_t) BinaryData::ym2608_rhythm_rom_binSize);
+    patchDirty.store (false, std::memory_order_release);
 }
 
 void NineightAudioProcessor::releaseResources()
@@ -35,6 +99,13 @@ void NineightAudioProcessor::renderSegment (juce::AudioBuffer<float>& buffer, in
 void NineightAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ScopedNoDenormals noDenormals;
+
+    synth.masterGain = pGain->load();
+    synth.pan = pPan->load();
+    synth.polyphony = pPoly->load() > 0.5f;
+
+    if (patchDirty.exchange (false, std::memory_order_acq_rel))
+        syncPatchFromParams();
 
     // Register writes / notes from the UI bridge (mirrors the worklet message drain)
     commandQueue.drain ([this] (const EngineCommand& cmd)
@@ -73,13 +144,20 @@ juce::AudioProcessorEditor* NineightAudioProcessor::createEditor()
     return new NineightAudioProcessorEditor (*this);
 }
 
-void NineightAudioProcessor::getStateInformation (juce::MemoryBlock&)
+void NineightAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    // Phase 2: APVTS state
+    if (auto xml = apvts.copyState().createXml())
+        copyXmlToBinary (*xml, destData);
 }
 
-void NineightAudioProcessor::setStateInformation (const void*, int)
+void NineightAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
+    if (auto xml = getXmlFromBinary (data, sizeInBytes))
+        if (xml->hasTagName (apvts.state.getType()))
+        {
+            apvts.replaceState (juce::ValueTree::fromXml (*xml));
+            patchDirty.store (true, std::memory_order_release);
+        }
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

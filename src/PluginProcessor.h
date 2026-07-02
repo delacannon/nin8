@@ -4,11 +4,12 @@
 #include "engine/Synth.h"
 #include "engine/RegisterWriteQueue.h"
 
-class NineightAudioProcessor : public juce::AudioProcessor
+class NineightAudioProcessor : public juce::AudioProcessor,
+                               private juce::AudioProcessorValueTreeState::Listener
 {
 public:
     NineightAudioProcessor();
-    ~NineightAudioProcessor() override = default;
+    ~NineightAudioProcessor() override;
 
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
@@ -35,12 +36,30 @@ public:
 
     // Message-thread producers (UI bridge / params)
     CommandQueue& commands() { return commandQueue; }
+    juce::AudioProcessorValueTreeState& parameters() { return apvts; }
 
 private:
+    void parameterChanged (const juce::String& parameterID, float newValue) override;
+    void cacheParameterPointers();
+    void syncPatchFromParams();
     void renderSegment (juce::AudioBuffer<float>& buffer, int start, int numSamples);
+
+    juce::AudioProcessorValueTreeState apvts;
 
     Synth synth;
     CommandQueue commandQueue;
+    std::atomic<bool> patchDirty { false };
+
+    // Raw APVTS atomics, RT-safe to read in processBlock
+    std::atomic<float>* pAlg = nullptr;
+    std::atomic<float>* pFb = nullptr;
+    std::atomic<float>* pLfoFreq = nullptr;
+    std::atomic<float>* pLfoAms = nullptr;
+    std::atomic<float>* pLfoPms = nullptr;
+    std::atomic<float>* pGain = nullptr;
+    std::atomic<float>* pPan = nullptr;
+    std::atomic<float>* pPoly = nullptr;
+    std::atomic<float>* pOp[4][11] = {};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NineightAudioProcessor)
 };
