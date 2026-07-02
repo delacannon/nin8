@@ -175,11 +175,11 @@ void WebViewBridge::emitTimerEvents (juce::WebBrowserComponent& webView)
                                              juce::var (obj));
     });
 
-    // Oscilloscope waveform (AnalyserNode replacement)
+    // Oscilloscope waveform (AnalyserNode replacement). Standard base64 —
+    // MemoryBlock::toBase64Encoding is a JUCE-specific alphabet that atob() can't read.
     uint8_t bytes[WaveformTap::kWindow];
     processor.waveform().readBytes (bytes);
-    juce::MemoryBlock mb (bytes, sizeof (bytes));
-    webView.emitEventIfBrowserIsVisible ("waveform", juce::var (mb.toBase64Encoding()));
+    webView.emitEventIfBrowserIsVisible ("waveform", juce::var (juce::Base64::toBase64 (bytes, sizeof (bytes))));
 }
 
 void WebViewBridge::emitParamChanged (juce::WebBrowserComponent& webView, const juce::String& id, float value)
