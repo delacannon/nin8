@@ -1,6 +1,8 @@
 #pragma once
 
 #include <juce_audio_utils/juce_audio_utils.h>
+#include "engine/Synth.h"
+#include "engine/RegisterWriteQueue.h"
 
 class NineightAudioProcessor : public juce::AudioProcessor
 {
@@ -31,6 +33,14 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    // Message-thread producers (UI bridge / params)
+    CommandQueue& commands() { return commandQueue; }
+
 private:
+    void renderSegment (juce::AudioBuffer<float>& buffer, int start, int numSamples);
+
+    Synth synth;
+    CommandQueue commandQueue;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NineightAudioProcessor)
 };

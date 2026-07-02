@@ -30,6 +30,9 @@ juce_add_plugin(Nineight
     COPY_PLUGIN_AFTER_BUILD TRUE
     VST3_CATEGORIES Instrument Synth)
 
+juce_add_binary_data(NineightAssets SOURCES
+    assets/ym2608_rhythm_rom.bin)
+
 target_sources(Nineight PRIVATE
     src/PluginProcessor.cpp
     src/PluginEditor.cpp)
@@ -45,6 +48,7 @@ target_compile_definitions(Nineight PUBLIC
 
 target_link_libraries(Nineight
     PRIVATE
+        NineightAssets
         ymfm
         juce::juce_audio_utils
         juce::juce_gui_extra
