@@ -169,8 +169,8 @@ void NineightAudioProcessor::setStateInformation (const void* data, int sizeInBy
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
         if (xml->hasTagName (apvts.state.getType()))
         {
-            editorWidth.store (xml->getIntAttribute ("editorWidth", 1024));
-            editorHeight.store (xml->getIntAttribute ("editorHeight", 640));
+            editorWidth.store (xml->getIntAttribute ("editorWidth", 2048));
+            editorHeight.store (xml->getIntAttribute ("editorHeight", 1280));
             apvts.replaceState (juce::ValueTree::fromXml (*xml));
             patchDirty.store (true, std::memory_order_release);
         }
