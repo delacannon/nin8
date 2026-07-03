@@ -27,7 +27,16 @@ NineightAudioProcessorEditor::NineightAudioProcessorEditor (NineightAudioProcess
     setResizeLimits (640, 400, 2560, 1600);
     if (auto* c = getConstrainer())
         c->setFixedAspectRatio (1280.0 / 800.0);
-    setSize (processorRef.editorWidth.load(), processorRef.editorHeight.load());
+    const int w = processorRef.editorWidth.load();
+    const int h = processorRef.editorHeight.load();
+    setSize (w, h);
+    // The standalone wrapper squeezes resizable editors while it builds its
+    // window; re-assert the wanted size once construction settles
+    juce::MessageManager::callAsync ([safe = juce::Component::SafePointer<NineightAudioProcessorEditor> (this), w, h]
+    {
+        if (safe != nullptr)
+            safe->setSize (w, h);
+    });
     startTimerHz (30);
 }
 

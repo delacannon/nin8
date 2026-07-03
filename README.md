@@ -1,4 +1,4 @@
-# NINEIGHT — OPNA (YM2608) FM Synth Plugin
+# NINEIGHT - OPNA (YM2608) FM Synth VST
 
 C++ port of the [NINEIGHT](https://delacannon.itch.io/nineigth) web app "NINEIGHT" as **VST3 / AU / Standalone** (JUCE 8).
 
@@ -91,9 +91,8 @@ Events (C++ → JS, 30 Hz while editor visible): `paramChanged`, `noteOn`/`noteO
 ## Status / TODO
 
 - [x] Native engine, MIDI, params, state, WebView UI (verified in Standalone on Linux)
-- [ ] Phase 4: SSG scene / rhythm pads / ADPCM-B / MML passthrough (`synthPost` cases)
+- [ ] Add SSG scene / rhythm pads
 - [ ] Export instruments presets from PC-98 games
-- [ ] Phase 5: CI matrix (Win VST3, macOS VST3+AU universal), pluginval runs
 - [ ] Scene adopts DAW-restored patch on editor open (currently boots with default preset)
 - [ ] Mono-mode portamento glide for host MIDI
 
