@@ -70,16 +70,6 @@ Without it the editor comes up blank (audio still works).
 Note: the Linux-only pieces (webview patch behavior, `HostEnvSanitizer`) are
 no-ops on macOS/Windows; the same `ui/webui.zip` is embedded on all platforms.
 
-## Refresh the embedded UI
-
-Requires the opna monorepo checked out as a sibling (`../opna`) with the JUCE-mode
-patches (JuceBackend.ts, AudioEngine juce branches, `vite/config.juce.mjs`).
-
-```sh
-scripts/build-ui.sh        # vite build → ui/webui.zip (vendored, committed)
-node scripts/gen-rhythm-rom.mjs   # regenerate assets/ym2608_rhythm_rom.bin
-```
-
 ## Offline audio check
 
 ```sh
