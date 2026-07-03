@@ -102,7 +102,8 @@ Events (C++ → JS, 30 Hz while editor visible): `paramChanged`, `noteOn`/`noteO
 
 - [x] Native engine, MIDI, params, state, WebView UI (verified in Standalone on Linux)
 - [ ] Phase 4: SSG scene / rhythm pads / ADPCM-B / MML passthrough (`synthPost` cases)
-- [ ] Phase 5: CI matrix (Win VST3, macOS VST3+AU universal), pluginval runs
+- [x] CI: GitHub Actions Linux build (VST3 + Standalone), artifacts on every push, GitHub Release on `v*` tags (`git tag v0.5.0 && git push --tags`)
+- [ ] Phase 5: extend CI matrix (Win VST3, macOS VST3+AU universal), pluginval runs
 - [ ] Scene adopts DAW-restored patch on editor open (currently boots with default preset)
 - [ ] Mono-mode portamento glide for host MIDI
 
