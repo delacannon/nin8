@@ -1,4 +1,6 @@
-# NINEIGHT - OPNA (YM2608) FM Synth VST
+# NINEIGHT - OPNA (YM2608) FM Synth VST v0.1.0(Beta)
+
+![NINEIGHT plugin UI](nin8-vst.png)
 
 C++ port of the [NINEIGHT](https://delacannon.itch.io/nineigth) web app "NINEIGHT" as **VST3 / AU / Standalone** (JUCE 8).
 
