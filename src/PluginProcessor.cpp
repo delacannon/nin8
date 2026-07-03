@@ -157,7 +157,11 @@ juce::AudioProcessorEditor* NineightAudioProcessor::createEditor()
 void NineightAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     if (auto xml = apvts.copyState().createXml())
+    {
+        xml->setAttribute ("editorWidth", editorWidth.load());
+        xml->setAttribute ("editorHeight", editorHeight.load());
         copyXmlToBinary (*xml, destData);
+    }
 }
 
 void NineightAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
@@ -165,6 +169,8 @@ void NineightAudioProcessor::setStateInformation (const void* data, int sizeInBy
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
         if (xml->hasTagName (apvts.state.getType()))
         {
+            editorWidth.store (xml->getIntAttribute ("editorWidth", 1024));
+            editorHeight.store (xml->getIntAttribute ("editorHeight", 640));
             apvts.replaceState (juce::ValueTree::fromXml (*xml));
             patchDirty.store (true, std::memory_order_release);
         }

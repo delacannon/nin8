@@ -43,6 +43,9 @@ public:
     double currentSampleRate() const { return lastSampleRate; }
     double chipNativeRate() const { return nativeRate; }
 
+    // Last editor size, persisted with the plugin state (UI scales to fit)
+    std::atomic<int> editorWidth { 1024 }, editorHeight { 640 };
+
 private:
     void parameterChanged (const juce::String& parameterID, float newValue) override;
     void cacheParameterPointers();

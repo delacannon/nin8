@@ -22,7 +22,12 @@ NineightAudioProcessorEditor::NineightAudioProcessorEditor (NineightAudioProcess
         if (auto* withID = dynamic_cast<juce::AudioProcessorParameterWithID*> (param))
             processorRef.parameters().addParameterListener (withID->paramID, this);
 
-    setSize (1280, 800);
+    // Resizable, 16:10 like the 1280x800 design; the Phaser canvas scale-fits
+    setResizable (true, true);
+    setResizeLimits (640, 400, 2560, 1600);
+    if (auto* c = getConstrainer())
+        c->setFixedAspectRatio (1280.0 / 800.0);
+    setSize (processorRef.editorWidth.load(), processorRef.editorHeight.load());
     startTimerHz (30);
 }
 
@@ -36,6 +41,8 @@ NineightAudioProcessorEditor::~NineightAudioProcessorEditor()
 void NineightAudioProcessorEditor::resized()
 {
     webView->setBounds (getLocalBounds());
+    processorRef.editorWidth.store (getWidth());
+    processorRef.editorHeight.store (getHeight());
 }
 
 void NineightAudioProcessorEditor::timerCallback()
