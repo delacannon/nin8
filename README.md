@@ -1,9 +1,9 @@
 # NINEIGHT — OPNA (YM2608) FM Synth Plugin
 
-C++ port of the [opna](../opna) web app "NINEIGHT" as **VST3 / AU / Standalone** (JUCE 8).
+C++ port of the [NINEIGHT](https://delacannon.itch.io/nineigth) web app "NINEIGHT" as **VST3 / AU / Standalone** (JUCE 8).
 
-- **Audio**: native `ymfm::ym2608` — the *same* emulator the web app compiles to WASM. Register packing, voice allocation, resampler and rhythm-ROM init are line-for-line ports of `@opna/core`, so the plugin sounds identical.
-- **UI**: the *actual* Phaser 3 web UI (PC-98 CRT aesthetic) embedded via JUCE 8 `WebBrowserComponent`, talking to the native engine over a JS↔C++ bridge (`window.__JUCE__`).
+- **Audio**: native `ymfm::ym2608` — the _same_ emulator the web app compiles to WASM. Register packing, voice allocation, resampler and rhythm-ROM init are line-for-line ports of `@opna/core`, so the plugin sounds identical.
+- **UI**: the _actual_ Phaser 3 web UI (PC-98 CRT aesthetic) embedded via JUCE 8 `WebBrowserComponent`, talking to the native engine over a JS↔C++ bridge (`window.__JUCE__`).
 - 52 host-automatable parameters (algorithm, feedback, LFO, gain, pan, poly, 4 ops × 11); state = APVTS XML.
 
 ## Build (Linux)
@@ -20,13 +20,13 @@ Deps: `libwebkit2gtk-4.0-dev` + usual JUCE X11/ALSA packages.
 
 ## Build (macOS — VST3 + AU + Standalone)
 
-Requires Xcode (or Command Line Tools) and CMake ≥ 3.22. The `FORMATS` line in
+Requires Xcode (or Command Line Tools) and CMake ≥ 3.22. The `FORMATS` line i
 CMakeLists adds AU automatically on Darwin. The UI uses the system WKWebView —
 no extra dependencies.
 
 ```sh
 # clone with submodules (JUCE)
-git clone --recurse-submodules <repo-url> && cd opna-vst
+git clone --recurse-submodules <repo-url> && cd nineight-vst
 
 # universal binary (Apple Silicon + Intel)
 cmake -B build -DCMAKE_BUILD_TYPE=Release \
@@ -53,7 +53,7 @@ configure step applies the JUCE webview patch with `git apply`).
 
 ```bat
 git clone --recurse-submodules <repo-url>
-cd opna-vst
+cd nineight-vst
 cmake -B build -G "Visual Studio 17 2022" -A x64
 cmake --build build --config Release --parallel
 ```
@@ -90,10 +90,10 @@ build/render_test assets/ym2608_rhythm_rom.bin /tmp/c4.wav   # renders piano C4,
 
 ## Bridge protocol
 
-| JS → C++ | Purpose |
-| --- | --- |
-| `synthReady()` (native fn, round-trip) | returns `{sampleRate, nativeRate, patch}` on UI boot |
-| `uiEvent` (one-way `emitEvent`) | all hot-path traffic: `{cmd: noteOn/noteOff/allNotesOff/setParam/setOpEnvelope/post, …}` — no response roundtrip, so knob drags can't flood the message loop |
+| JS → C++                               | Purpose                                                                                                                                                      |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `synthReady()` (native fn, round-trip) | returns `{sampleRate, nativeRate, patch}` on UI boot                                                                                                         |
+| `uiEvent` (one-way `emitEvent`)        | all hot-path traffic: `{cmd: noteOn/noteOff/allNotesOff/setParam/setOpEnvelope/post, …}` — no response roundtrip, so knob drags can't flood the message loop |
 
 Events (C++ → JS, 30 Hz while editor visible): `paramChanged`, `noteOn`/`noteOff`
 (host MIDI → key highlight), `waveform` (2048-byte AnalyserNode-format scope data).
@@ -102,8 +102,8 @@ Events (C++ → JS, 30 Hz while editor visible): `paramChanged`, `noteOn`/`noteO
 
 - [x] Native engine, MIDI, params, state, WebView UI (verified in Standalone on Linux)
 - [ ] Phase 4: SSG scene / rhythm pads / ADPCM-B / MML passthrough (`synthPost` cases)
-- [x] CI: GitHub Actions Linux build (VST3 + Standalone), artifacts on every push, GitHub Release on `v*` tags (`git tag v0.5.0 && git push --tags`)
-- [ ] Phase 5: extend CI matrix (Win VST3, macOS VST3+AU universal), pluginval runs
+- [ ] Export instruments presets from PC-98 games
+- [ ] Phase 5: CI matrix (Win VST3, macOS VST3+AU universal), pluginval runs
 - [ ] Scene adopts DAW-restored patch on editor open (currently boots with default preset)
 - [ ] Mono-mode portamento glide for host MIDI
 
