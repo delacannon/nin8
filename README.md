@@ -28,7 +28,7 @@ no extra dependencies.
 
 ```sh
 # clone with submodules (JUCE)
-git clone --recurse-submodules <repo-url> && cd nineight-vst
+git clone --recurse-submodules <repo-url> && cd nin8
 
 # universal binary (Apple Silicon + Intel)
 cmake -B build -DCMAKE_BUILD_TYPE=Release \
@@ -55,7 +55,7 @@ configure step applies the JUCE webview patch with `git apply`).
 
 ```bat
 git clone --recurse-submodules <repo-url>
-cd nineight-vst
+cd nin8
 cmake -B build -G "Visual Studio 17 2022" -A x64
 cmake --build build --config Release --parallel
 ```
