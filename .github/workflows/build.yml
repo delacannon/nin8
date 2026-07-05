@@ -104,6 +104,12 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Install WebView2 SDK
+        shell: pwsh
+        run: |
+          Register-PackageSource -Provider NuGet -Name nuget.org -Location https://www.nuget.org/api/v2 -Force -Trusted
+          Install-Package Microsoft.Web.WebView2 -Scope CurrentUser -RequiredVersion 1.0.3485.44 -Source nuget.org -Force
+
       - name: Configure
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 

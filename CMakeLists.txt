@@ -41,11 +41,18 @@ if(APPLE)
     list(APPEND NINEIGHT_FORMATS AU)
 endif()
 
+# WebView2 backend: required on Windows for WebBrowserComponent resource provider.
+set(NINEIGHT_WEBVIEW2_ARG "")
+if(WIN32)
+    set(NINEIGHT_WEBVIEW2_ARG NEEDS_WEBVIEW2 TRUE)
+endif()
+
 juce_add_plugin(Nineight
     COMPANY_NAME "NINEIGHT"
     PLUGIN_MANUFACTURER_CODE Nin8
     PLUGIN_CODE Opna
     FORMATS ${NINEIGHT_FORMATS}
+    ${NINEIGHT_WEBVIEW2_ARG}
     PRODUCT_NAME "NINEIGHT"
     IS_SYNTH TRUE
     NEEDS_MIDI_INPUT TRUE
