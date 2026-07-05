@@ -18,6 +18,7 @@ class ScopedHostEnvSanitizer
 public:
     ScopedHostEnvSanitizer()
     {
+#if defined(__linux__)
         static const char* keys[] = {
             "LD_LIBRARY_PATH",
             "GTK_PATH",
@@ -40,12 +41,15 @@ public:
                 saved.emplace_back (key, value);
                 ::unsetenv (key);
             }
+#endif
     }
 
     ~ScopedHostEnvSanitizer()
     {
+#if defined(__linux__)
         for (const auto& [key, value] : saved)
             ::setenv (key.c_str(), value.c_str(), 1);
+#endif
     }
 
 private:

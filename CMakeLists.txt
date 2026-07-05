@@ -36,11 +36,16 @@ add_library(ymfm STATIC
     third_party/ymfm/src/ymfm_ssg.cpp)
 target_include_directories(ymfm PUBLIC third_party/ymfm/src)
 
+set(NINEIGHT_FORMATS VST3 Standalone)
+if(APPLE)
+    list(APPEND NINEIGHT_FORMATS AU)
+endif()
+
 juce_add_plugin(Nineight
     COMPANY_NAME "NINEIGHT"
     PLUGIN_MANUFACTURER_CODE Nin8
     PLUGIN_CODE Opna
-    FORMATS VST3 Standalone $<$<PLATFORM_ID:Darwin>:AU>
+    FORMATS ${NINEIGHT_FORMATS}
     PRODUCT_NAME "NINEIGHT"
     IS_SYNTH TRUE
     NEEDS_MIDI_INPUT TRUE
