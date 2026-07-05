@@ -55,3 +55,82 @@ jobs:
         with:
           files: dist/${{ env.PKG }}.tar.gz
           generate_release_notes: true
+
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Ninja
+        run: brew install ninja
+
+      - name: Configure
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Package
+        run: |
+          VERSION=${GITHUB_REF_NAME}
+          PKG=NINEIGHT-${VERSION}-macos-universal
+          ART=build/Nineight_artefacts/Release
+          mkdir -p dist/${PKG}
+          cp -R ${ART}/VST3/NINEIGHT.vst3 dist/${PKG}/
+          cp -R ${ART}/AU/NINEIGHT.component dist/${PKG}/
+          cp -R ${ART}/Standalone/NINEIGHT.app dist/${PKG}/
+          cp README.md dist/${PKG}/
+          ditto -c -k --keepParent dist/${PKG} dist/${PKG}.zip
+          echo "PKG=${PKG}" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PKG }}
+          path: dist/${{ env.PKG }}.zip
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/${{ env.PKG }}.zip
+          generate_release_notes: true
+
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $VERSION = $env:GITHUB_REF_NAME
+          $PKG = "NINEIGHT-$VERSION-windows-x86_64"
+          $ART = "build/Nineight_artefacts/Release"
+          New-Item -ItemType Directory -Force -Path "dist/$PKG" | Out-Null
+          Copy-Item -Recurse "$ART/VST3/NINEIGHT.vst3" "dist/$PKG/"
+          Copy-Item "$ART/Standalone/NINEIGHT.exe" "dist/$PKG/"
+          Copy-Item README.md "dist/$PKG/"
+          Compress-Archive -Path "dist/$PKG/*" -DestinationPath "dist/$PKG.zip"
+          "PKG=$PKG" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PKG }}
+          path: dist/${{ env.PKG }}.zip
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/${{ env.PKG }}.zip
+          generate_release_notes: true
